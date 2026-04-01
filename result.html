@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<title>Imtihon natijalari</title>
+<style>
+body{
+  font-family: Arial;
+  background:#eef2f5;
+  padding:20px;
+}
+.container{
+  max-width:400px;
+  margin:auto;
+  background:#fff;
+  padding:20px;
+  border-radius:8px;
+  text-align:center;
+}
+.result {
+  font-size: 24px;
+  margin-top: 20px;
+}
+</style>
+</head>
+
+<body>
+<div class="container"> 
+  <h1>Imtihon natijalari</h1>
+  <div id="score"></div>
+  <div id="status" class="result"></div>
+</div>
+ <div id="answersReview"></div>
+<script>
+/* ===== TEST MA'LUMOTLARI (MISOL) ===== */
+if(!localStorage.getItem("questions")){
+  localStorage.setItem("questions", JSON.stringify([
+    {q:"CMD nimani anglatadi?", a:["Buyruq satri","Brauzer","O‘yin","Server"], c:0},
+    {q:"Ping buyrug‘i nima qiladi?", a:["IP tekshiradi","Rasm ochadi","Virus topadi","O‘chiradi"], c:0}
+  ]));
+  localStorage.setItem("answers", JSON.stringify([0,1]));
+}
+
+const questions = JSON.parse(localStorage.getItem("questions")) || [];
+const answers   = JSON.parse(localStorage.getItem("answers")) || [];
+
+let score = 0;
+questions.forEach((q,i)=>{
+  if(answers[i] === q.c) score++;
+});
+let reviewBox = document.getElementById("answersReview");
+
+let html = "<h3>Javoblar tahlili:</h3>";
+
+questions.forEach((q, i) => {
+  let userAnswer = answers[i];
+  let correctAnswer = q.c;
+
+  html += `
+    <div style="text-align:left; margin:10px 0; padding:10px; border:1px solid #ddd; border-radius:6px;">
+      <b>${i+1}. ${q.q}</b><br>
+      
+      Siz tanladingiz: 
+      <span style="color:${userAnswer === correctAnswer ? 'green' : 'red'}">
+        ${q.a[userAnswer] ?? "Tanlanmagan"}
+      </span><br>
+      
+      To‘g‘ri javob: 
+      <span style="color:green">
+        ${q.a[correctAnswer]}
+      </span>
+    </div>
+  `;
+});
+
+reviewBox.innerHTML = html;
+/* Natijani sahifaga chiqarish */
+document.getElementById("score").innerHTML =
+  `<h2>Natija: ${score} / ${questions.length}</h2>`;
+
+let statusText = score >= 45 ? "IMTIHONDAN O‘TDI ✅" : "IMTIHONDAN O‘TMADI ❌";
+document.getElementById("status").innerText = statusText;
+
+/* ===== TELEGRAMGA YUBORISH ===== */
+const BOT_TOKEN = ":AAHSc_NKZqTEdz2t7Cvyqfudt3OV50pNrH8"; // Telegram bot tokeningiz
+const CHAT_ID  = "8349378667"; // Telegram chat ID
+
+/* Telegramga yuborish funksiyasi */
+function sendToTelegram(text){
+  fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({
+      chat_id: CHAT_ID,
+      text: text,
+      parse_mode: "HTML"
+    })
+  })
+  .then(res => res.json())
+  .then(data => console.log("Telegramga yuborildi:", data))
+  .catch(err => console.error("Xato:", err));
+}
+
+/* Natija matni */
+let resultText = `
+📝 <b>Imtihon natijasi</b>
+
+✅ To‘g‘ri: ${score}
+❌ Noto‘g‘ri: ${questions.length - score}
+📊 Jami: ${questions.length}
+
+🏁 ${statusText}
+`;
+
+/* Telegramga yuborish chaqiruv */
+sendToTelegram(resultText);
+</script>
+
+</body>
+</html>
